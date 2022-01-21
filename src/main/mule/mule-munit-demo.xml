@@ -1,5 +1,116 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd"></mule>
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="get-all-employee-flow"
+		doc:id="d1ec75ae-eb52-4648-9555-bfc1f1111ae8">
+		<http:listener doc:name="Listener"
+			doc:id="df5e4b9b-f24f-44c6-9a5f-2f50a2ccef18"
+			config-ref="HTTP_Listener_config" path="/users" allowedMethods="GET"/>
+		<db:select doc:name="Select"
+			doc:id="350b3852-2c82-4ed3-a328-794a27a1fbcb"
+			config-ref="Database_Config">
+			<db:sql><![CDATA[SELECT * FROM onboard.emp_master]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message"
+			doc:id="a1a5dbaa-020d-44d1-aa7a-f92a0bba15bf">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="Choice"
+			doc:id="7d311624-a9f5-4391-9406-46da9c205074">
+			<when expression="#[sizeOf(payload)&gt;0]">
+				<ee:transform doc:name="Transform Message"
+					doc:id="f8a8eebd-ee3e-47fd-b31c-af47d9cc107d">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise>
+				<ee:transform doc:name="Transform Message"
+					doc:id="2a21b689-2da3-4aa2-ae8f-4dbc3f841896">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message"
+			doc:id="031546fa-3f02-4411-9f43-7ab74278a242">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="get-employee-by-Id-flow" doc:id="ef906d1c-d018-4098-8fa2-ad6e9a16908c" >
+		<http:listener doc:name="Listener" doc:id="94dc438e-e1c2-4171-aeba-55ad005a66c7" config-ref="HTTP_Listener_config" path="/users/{emp_id}" allowedMethods="GET"/>
+		<db:select doc:name="Select" doc:id="ea94441a-1079-475e-acc2-92ffccb870bc" config-ref="Database_Config" >
+			<db:sql ><![CDATA[SELECT * FROM onboard.emp_master where emp_id=:emp_id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"emp_id": attributes.uriParams.emp_id
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="b13cd388-7680-46af-bca8-f2c27ab7c614" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="b3d66d6d-65b2-4988-aaa4-c50397ff30fe" >
+			<when expression="#[payload[0] != null]" >
+				<ee:transform doc:name="Transform Message" doc:id="eb6edb4f-c9da-4e08-b34e-9265947f4c01" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="0c64e526-678c-48c6-bf1d-5f2d9fa9bb42" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "No data"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="c50cd12f-5f0b-4373-95ba-43371d55759b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
